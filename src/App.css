@@ -1,0 +1,150 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  box-sizing: border-box;
+  width: 100%;
+  background: #000;
+  color: rgba(255, 255, 255, 0.87);
+}
+
+.app__header {
+  flex: 0 0 auto;
+  padding: 1rem 1.25rem;
+  text-align: left;
+}
+
+.app__title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+.app__title-row h1 {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 600;
+}
+
+.app__filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.5rem;
+  align-items: center;
+  margin-bottom: 0.65rem;
+}
+
+.app__chip {
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 500;
+  padding: 0.32rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.55);
+  cursor: pointer;
+}
+
+.app__chip:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.app__chip--on {
+  border-color: rgba(120, 200, 255, 0.45);
+  background: rgba(80, 160, 255, 0.18);
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.app__chip--on:hover {
+  background: rgba(80, 160, 255, 0.26);
+  color: #fff;
+}
+
+.app__param-group__body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 0.85rem;
+  align-items: center;
+}
+
+.app__param-groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  align-items: flex-start;
+}
+
+.app__param-group {
+  margin: 0;
+  padding: 0.45rem 0.65rem 0.55rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 0.85rem;
+  align-items: center;
+}
+
+.app__param-group legend {
+  padding: 0 0.35rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.app__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.app__label input {
+  width: 4.5em;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.25);
+  color: inherit;
+}
+
+.app__label input[type="checkbox"] {
+  width: auto;
+  padding: 0;
+}
+
+.scene {
+  position: relative;
+  flex: 1 1 0;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0.5rem 1.25rem 1.25rem;
+  border: none;
+  border-radius: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  background: transparent;
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .app__header {
+    padding: 0.75rem 1rem 0.5rem;
+  }
+
+  .app__filter-chips {
+    margin-bottom: 0.5rem;
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "name": "sci-fi-ui",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Sci-fi glass UI with WebGL shaders and a resizable grid overlay",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "vite",
+    "start": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "p5": "^1.11.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/p5": "^1.7.6",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^6.0.1",
+    "typescript": "~5.6.0",
+    "vite": "^8.0.10",
+    "vitest": "^4.1.5"
+  }
+}
