@@ -62,6 +62,7 @@ function App() {
     specularSpin: null,
     specularModulation: null,
     specDirByCellId: {},
+    boidEnabled: true,
   });
   const [glassParams, setGlassParams] = useState<GlassParams>(GLASS_DEFAULTS);
   const [showDebugShader, setShowDebugShader] = useState(false);

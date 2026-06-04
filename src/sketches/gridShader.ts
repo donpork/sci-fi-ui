@@ -1,6 +1,7 @@
 import p5 from "p5";
 import type { MutableRefObject } from "react";
 import type { CellRect, SceneData } from "../lib/sceneData";
+import { createBoidLayer, type BoidLayerHandle } from "./boidLayer";
 import vert from "../shaders/cell.vert?raw";
 import frag from "../shaders/cell.frag?raw";
 import cubeStripUrl from "../assets/StandardCubeMap.png";
@@ -236,6 +237,11 @@ export function createGridShaderSketch(
     let defaultImgLoadAttempted = false;
     /** Last pointer-driven specular direction per cell id; persists when pointer leaves. */
     const lastSpecularXY = new Map<string, [number, number]>();
+    let boidLayer: BoidLayerHandle | null = null;
+    let prevLightX = 0;
+    let prevLightY = 0;
+    let lastCanvasW = 0;
+    let lastCanvasH = 0;
 
     const drawBackgroundLayer = () => {
       const d = dataRef.current;
@@ -243,6 +249,19 @@ export function createGridShaderSketch(
       bgLayer.noStroke();
       bgLayer.fill(0, 0, 0, 160);
       bgLayer.rect(0, 0, bgLayer.width, bgLayer.height);
+      if (d.boidEnabled) {
+        const cell = d.containerRects[0];
+        if (cell && cell.w > 0 && cell.h > 0) {
+          const velX = d.lightPos.x - prevLightX;
+          const velY = d.lightPos.y - prevLightY;
+          const ctx = (bgLayer as unknown as { drawingContext: CanvasRenderingContext2D }).drawingContext;
+          ctx.globalCompositeOperation = "lighter";
+          boidLayer?.draw(bgLayer, cell, d.lightPos, d.rimHoldPointerDown, velX, velY);
+          ctx.globalCompositeOperation = "source-over";
+        }
+      }
+      prevLightX = d.lightPos.x;
+      prevLightY = d.lightPos.y;
       bgLayer.textAlign(p.CENTER, p.CENTER);
       const px = d.lightPos.x;
       const py = d.lightPos.y;
@@ -340,8 +359,13 @@ export function createGridShaderSketch(
       p.ortho(-w * 0.5, w * 0.5, -h * 0.5, h * 0.5, -1000, 1000);
       sh = p.createShader(vert, frag);
       bgLayer = p.createGraphics(w, h);
+      bgLayer.pixelDensity(1);
       labelLayer = p.createGraphics(w, h);
+      labelLayer.pixelDensity(1);
       blitShader = p.createShader(BLIT_VERT, BLIT_FRAG);
+      boidLayer = createBoidLayer();
+      lastCanvasW = w;
+      lastCanvasH = h;
       if (!envLoadAttempted) {
         envLoadAttempted = true;
         p.loadImage(
@@ -373,6 +397,11 @@ export function createGridShaderSketch(
       if (bgLayer.width !== p.width || bgLayer.height !== p.height) {
         bgLayer.resizeCanvas(p.width, p.height);
         labelLayer.resizeCanvas(p.width, p.height);
+      }
+      if (p.width !== lastCanvasW || p.height !== lastCanvasH) {
+        boidLayer?.resize();
+        lastCanvasW = p.width;
+        lastCanvasH = p.height;
       }
       drawBackgroundLayer();
       drawLabelOverlay();

@@ -125,5 +125,7 @@ export type SceneData = {
   specularModulation: SpecularModulationState | null;
   /** Normalized specular XY direction written per-frame by the sketch, keyed by cell id. */
   specDirByCellId: Record<string, [number, number]>;
+  /** When true, boid simulation renders into bgLayer each frame. */
+  boidEnabled: boolean;
 };
 
