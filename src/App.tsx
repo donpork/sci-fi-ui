@@ -2,10 +2,40 @@ import { useLayoutEffect, useRef, useState, type ChangeEvent } from "react";
 import { ResizableGridOverlay } from "./components/ResizableGridOverlay";
 import { makeLabelsFromPreset } from "./lib/cellLabelGrid";
 import { PRESET_SINGLE } from "./lib/layoutPreset";
-import type { GlassParams, SceneData } from "./lib/sceneData";
+import type { BoidParams, GlassParams, SceneData } from "./lib/sceneData";
 import "./App.css";
 
 const CELL_LABELS = makeLabelsFromPreset(PRESET_SINGLE);
+
+const BOID_PARAMS_DEFAULTS: BoidParams = {
+  minLiveBoids: 1000,
+  deathDistancePx: 12,
+  v02BoidLength: 2,
+  v02BoidLineLength: 4,
+  themeSeedHex: "#6688cc",
+  v02LifeCycleFrames: 500,
+  movementMode: "isocontour",
+  v02ConstantSpeedAtCenter: true,
+  v02CenterSpeed: 0.3,
+  v02EdgeVelocityMultiplier: 1.0,
+  v02InnerExclusionDepth: 9999,
+  v02SpawnOuterMarginPx: 8,
+  v02BlastRadius: 400,
+  v02SepRadius: 24,
+  v02SepWeight: 1.3,
+  v02AlignRadius: 36,
+  v02AlignWeight: 1.0,
+  v02CohesionRadius: 42,
+  v02CohesionWeight: 1.0,
+  mouseAlignRadius: 200,
+  mouseAlignWeight: 1.0,
+  mouseAttractRadius: 120,
+  mouseAttractWeight: 2.0,
+  mouseAccelSensitivity: 1.0,
+  mouseMinSpeed: 0.03,
+  mouseDecayRate: 1.5,
+  mouseProximityLerpDown: 1.0,
+};
 const GLASS_DEFAULTS: GlassParams = {
   lightDirXY: [1.0, -1.0],
   keyLightIntensity: 1.0,
@@ -63,17 +93,24 @@ function App() {
     specularModulation: null,
     specDirByCellId: {},
     boidEnabled: true,
+    boidParams: BOID_PARAMS_DEFAULTS,
   });
   const [glassParams, setGlassParams] = useState<GlassParams>(GLASS_DEFAULTS);
   const [showDebugShader, setShowDebugShader] = useState(false);
   const [showDebugGrid, setShowDebugGrid] = useState(false);
   const [panelGlass, setPanelGlass] = useState(false);
   const [panelLight, setPanelLight] = useState(false);
+  const [panelParticles, setPanelParticles] = useState(false);
   const [panelDebug, setPanelDebug] = useState(false);
+  const [boidParams, setBoidParams] = useState<BoidParams>(BOID_PARAMS_DEFAULTS);
 
   useLayoutEffect(() => {
     dataRef.current = { ...dataRef.current, glassParams };
   }, [glassParams]);
+
+  useLayoutEffect(() => {
+    dataRef.current = { ...dataRef.current, boidParams };
+  }, [boidParams]);
 
   const onGlassParam =
     (key: keyof GlassParams) => (e: ChangeEvent<HTMLInputElement>) => {
@@ -219,6 +256,58 @@ function App() {
     });
   };
 
+  const onBoidParam =
+    (key: keyof BoidParams) => (e: ChangeEvent<HTMLInputElement>) => {
+      const n = Number(e.target.value);
+      if (!Number.isFinite(n)) return;
+      setBoidParams((prev) => {
+        if (key === "minLiveBoids") return { ...prev, minLiveBoids: Math.max(0, Math.min(10000, Math.round(n))) };
+        if (key === "deathDistancePx") return { ...prev, deathDistancePx: clamp(n, 0, 100) };
+        if (key === "v02BoidLength") return { ...prev, v02BoidLength: clamp(n, 0.5, 10) };
+        if (key === "v02BoidLineLength") return { ...prev, v02BoidLineLength: clamp(n, 1, 40) };
+        if (key === "v02LifeCycleFrames") return { ...prev, v02LifeCycleFrames: Math.max(10, Math.round(n)) };
+        if (key === "v02CenterSpeed") return { ...prev, v02CenterSpeed: clamp(n, 0, 2) };
+        if (key === "v02EdgeVelocityMultiplier") return { ...prev, v02EdgeVelocityMultiplier: clamp(n, 0, 4) };
+        if (key === "v02InnerExclusionDepth") return { ...prev, v02InnerExclusionDepth: Math.max(1, n) };
+        if (key === "v02SpawnOuterMarginPx") return { ...prev, v02SpawnOuterMarginPx: Math.max(1, n) };
+        if (key === "v02BlastRadius") return { ...prev, v02BlastRadius: Math.max(1, n) };
+        if (key === "v02SepRadius") return { ...prev, v02SepRadius: Math.max(1, n) };
+        if (key === "v02SepWeight") return { ...prev, v02SepWeight: clamp(n, 0, 5) };
+        if (key === "v02AlignRadius") return { ...prev, v02AlignRadius: Math.max(1, n) };
+        if (key === "v02AlignWeight") return { ...prev, v02AlignWeight: clamp(n, 0, 5) };
+        if (key === "v02CohesionRadius") return { ...prev, v02CohesionRadius: Math.max(1, n) };
+        if (key === "v02CohesionWeight") return { ...prev, v02CohesionWeight: clamp(n, 0, 5) };
+        if (key === "mouseAlignRadius") return { ...prev, mouseAlignRadius: Math.max(1, n) };
+        if (key === "mouseAlignWeight") return { ...prev, mouseAlignWeight: clamp(n, 0, 10) };
+        if (key === "mouseAttractRadius") return { ...prev, mouseAttractRadius: Math.max(1, n) };
+        if (key === "mouseAttractWeight") return { ...prev, mouseAttractWeight: clamp(n, 0, 10) };
+        if (key === "mouseAccelSensitivity") return { ...prev, mouseAccelSensitivity: clamp(n, 0, 10) };
+        if (key === "mouseMinSpeed") return { ...prev, mouseMinSpeed: clamp(n, 0, 10) };
+        if (key === "mouseDecayRate") return { ...prev, mouseDecayRate: clamp(n, 0.001, 10) };
+        if (key === "mouseProximityLerpDown") return { ...prev, mouseProximityLerpDown: clamp(n, 0.001, 1) };
+        return prev;
+      });
+    };
+
+  const onBoidMovementMode = (e: ChangeEvent<HTMLSelectElement>) => {
+    const v = e.target.value;
+    if (v === "isocontour" || v === "flow") {
+      setBoidParams((prev) => ({ ...prev, movementMode: v }));
+    }
+  };
+
+  const onBoidConstantSpeed = (e: ChangeEvent<HTMLInputElement>) => {
+    setBoidParams((prev) => ({ ...prev, v02ConstantSpeedAtCenter: e.target.checked }));
+  };
+
+  const onBoidSeedColor = (e: ChangeEvent<HTMLInputElement>) => {
+    setBoidParams((prev) => ({ ...prev, themeSeedHex: e.target.value }));
+  };
+
+  const onBoidEnabled = (e: ChangeEvent<HTMLInputElement>) => {
+    dataRef.current = { ...dataRef.current, boidEnabled: e.target.checked };
+  };
+
   const onDebugShader = (e: ChangeEvent<HTMLInputElement>) => {
     setShowDebugShader(e.target.checked);
   };
@@ -257,6 +346,16 @@ function App() {
             onClick={() => setPanelLight((v) => !v)}
           >
             Light
+          </button>
+          <button
+            type="button"
+            className={
+              panelParticles ? "app__chip app__chip--on" : "app__chip"
+            }
+            aria-pressed={panelParticles}
+            onClick={() => setPanelParticles((v) => !v)}
+          >
+            Particles
           </button>
           <button
             type="button"
@@ -686,6 +785,328 @@ function App() {
                 max="16"
                 value={glassParams.bevelExponent}
                 onChange={onGlassParam("bevelExponent")}
+              />
+            </label>
+            </div>
+          </fieldset>
+          </>
+          ) : null}
+          {panelParticles ? (
+          <>
+          <fieldset className="app__param-group">
+            <legend>Particles</legend>
+            <div className="app__param-group__body">
+            <label className="app__label">
+              Enabled
+              <input
+                type="checkbox"
+                defaultChecked={dataRef.current.boidEnabled}
+                onChange={onBoidEnabled}
+              />
+            </label>
+            <label className="app__label">
+              Min live
+              <input
+                type="number"
+                step="10"
+                min="0"
+                max="10000"
+                value={boidParams.minLiveBoids}
+                onChange={onBoidParam("minLiveBoids")}
+              />
+            </label>
+            <label className="app__label">
+              Stroke width
+              <input
+                type="number"
+                step="0.1"
+                min="0.5"
+                max="10"
+                value={boidParams.v02BoidLength}
+                onChange={onBoidParam("v02BoidLength")}
+              />
+            </label>
+            <label className="app__label">
+              Boid length
+              <input
+                type="number"
+                step="0.5"
+                min="1"
+                max="40"
+                value={boidParams.v02BoidLineLength}
+                onChange={onBoidParam("v02BoidLineLength")}
+              />
+            </label>
+            <label className="app__label">
+              Seed color
+              <input
+                type="color"
+                value={boidParams.themeSeedHex}
+                onChange={onBoidSeedColor}
+              />
+            </label>
+            <label className="app__label">
+              Life frames
+              <input
+                type="number"
+                step="10"
+                min="10"
+                max="2000"
+                value={boidParams.v02LifeCycleFrames}
+                onChange={onBoidParam("v02LifeCycleFrames")}
+              />
+            </label>
+            <label className="app__label">
+              Edge buffer
+              <input
+                type="number"
+                step="1"
+                min="0"
+                max="100"
+                value={boidParams.deathDistancePx}
+                onChange={onBoidParam("deathDistancePx")}
+              />
+            </label>
+            </div>
+          </fieldset>
+          <fieldset className="app__param-group">
+            <legend>Movement</legend>
+            <div className="app__param-group__body">
+            <label className="app__label">
+              Mode
+              <select
+                value={boidParams.movementMode}
+                onChange={onBoidMovementMode}
+              >
+                <option value="isocontour">isocontour</option>
+                <option value="flow">flow</option>
+              </select>
+            </label>
+            <label className="app__label">
+              Constant speed
+              <input
+                type="checkbox"
+                checked={boidParams.v02ConstantSpeedAtCenter}
+                onChange={onBoidConstantSpeed}
+              />
+            </label>
+            <label className="app__label">
+              Center speed
+              <input
+                type="number"
+                step="0.05"
+                min="0"
+                max="2"
+                value={boidParams.v02CenterSpeed}
+                onChange={onBoidParam("v02CenterSpeed")}
+              />
+            </label>
+            <label className="app__label">
+              Edge speed x
+              <input
+                type="number"
+                step="0.1"
+                min="0"
+                max="4"
+                value={boidParams.v02EdgeVelocityMultiplier}
+                onChange={onBoidParam("v02EdgeVelocityMultiplier")}
+              />
+            </label>
+            <label className="app__label">
+              Inner exclusion
+              <input
+                type="number"
+                step="10"
+                min="1"
+                max="9999"
+                value={boidParams.v02InnerExclusionDepth}
+                onChange={onBoidParam("v02InnerExclusionDepth")}
+              />
+            </label>
+            <label className="app__label">
+              Spawn margin
+              <input
+                type="number"
+                step="1"
+                min="1"
+                max="100"
+                value={boidParams.v02SpawnOuterMarginPx}
+                onChange={onBoidParam("v02SpawnOuterMarginPx")}
+              />
+            </label>
+            <label className="app__label">
+              Blast radius
+              <input
+                type="number"
+                step="5"
+                min="1"
+                max="500"
+                value={boidParams.v02BlastRadius}
+                onChange={onBoidParam("v02BlastRadius")}
+              />
+            </label>
+            </div>
+          </fieldset>
+          <fieldset className="app__param-group">
+            <legend>Flocking</legend>
+            <div className="app__param-group__body">
+            <label className="app__label">
+              Sep radius
+              <input
+                type="number"
+                step="1"
+                min="1"
+                max="400"
+                value={boidParams.v02SepRadius}
+                onChange={onBoidParam("v02SepRadius")}
+              />
+            </label>
+            <label className="app__label">
+              Sep weight
+              <input
+                type="number"
+                step="0.1"
+                min="0"
+                max="5"
+                value={boidParams.v02SepWeight}
+                onChange={onBoidParam("v02SepWeight")}
+              />
+            </label>
+            <label className="app__label">
+              Align radius
+              <input
+                type="number"
+                step="1"
+                min="1"
+                max="400"
+                value={boidParams.v02AlignRadius}
+                onChange={onBoidParam("v02AlignRadius")}
+              />
+            </label>
+            <label className="app__label">
+              Align weight
+              <input
+                type="number"
+                step="0.1"
+                min="0"
+                max="5"
+                value={boidParams.v02AlignWeight}
+                onChange={onBoidParam("v02AlignWeight")}
+              />
+            </label>
+            <label className="app__label">
+              Cohesion radius
+              <input
+                type="number"
+                step="1"
+                min="1"
+                max="400"
+                value={boidParams.v02CohesionRadius}
+                onChange={onBoidParam("v02CohesionRadius")}
+              />
+            </label>
+            <label className="app__label">
+              Cohesion weight
+              <input
+                type="number"
+                step="0.1"
+                min="0"
+                max="5"
+                value={boidParams.v02CohesionWeight}
+                onChange={onBoidParam("v02CohesionWeight")}
+              />
+            </label>
+            </div>
+          </fieldset>
+          <fieldset className="app__param-group">
+            <legend>Mouse</legend>
+            <div className="app__param-group__body">
+            <label className="app__label">
+              Align radius
+              <input
+                type="number"
+                step="5"
+                min="1"
+                max="600"
+                value={boidParams.mouseAlignRadius}
+                onChange={onBoidParam("mouseAlignRadius")}
+              />
+            </label>
+            <label className="app__label">
+              Align weight
+              <input
+                type="number"
+                step="0.1"
+                min="0"
+                max="10"
+                value={boidParams.mouseAlignWeight}
+                onChange={onBoidParam("mouseAlignWeight")}
+              />
+            </label>
+            <label className="app__label">
+              Attract radius
+              <input
+                type="number"
+                step="5"
+                min="1"
+                max="600"
+                value={boidParams.mouseAttractRadius}
+                onChange={onBoidParam("mouseAttractRadius")}
+              />
+            </label>
+            <label className="app__label">
+              Attract weight
+              <input
+                type="number"
+                step="0.1"
+                min="0"
+                max="10"
+                value={boidParams.mouseAttractWeight}
+                onChange={onBoidParam("mouseAttractWeight")}
+              />
+            </label>
+            <label className="app__label">
+              Accel sensitivity
+              <input
+                type="number"
+                step="0.1"
+                min="0"
+                max="10"
+                value={boidParams.mouseAccelSensitivity}
+                onChange={onBoidParam("mouseAccelSensitivity")}
+              />
+            </label>
+            <label className="app__label">
+              Min speed
+              <input
+                type="number"
+                step="0.1"
+                min="0"
+                max="10"
+                value={boidParams.mouseMinSpeed}
+                onChange={onBoidParam("mouseMinSpeed")}
+              />
+            </label>
+            <label className="app__label">
+              Decay time (s)
+              <input
+                type="number"
+                step="0.1"
+                min="0.001"
+                max="10"
+                value={boidParams.mouseDecayRate}
+                onChange={onBoidParam("mouseDecayRate")}
+              />
+            </label>
+            <label className="app__label">
+              Proximity lerp
+              <input
+                type="number"
+                step="0.005"
+                min="0.001"
+                max="1"
+                value={boidParams.mouseProximityLerpDown}
+                onChange={onBoidParam("mouseProximityLerpDown")}
               />
             </label>
             </div>

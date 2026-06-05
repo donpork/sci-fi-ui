@@ -1,4 +1,5 @@
 import type p5 from "p5";
+import type { BoidParams } from "../lib/sceneData";
 import {
   type Boid,
   v02PillSDF,
@@ -9,39 +10,7 @@ import {
   v02PointerSpeedScale,
 } from "../../particles/boidSketch";
 
-type V02MovementMode = "isocontour" | "flow";
-
-const PARAMS = {
-  movementMode: "isocontour" as V02MovementMode,
-  minLiveBoids: 350,
-  deathDistancePx: 12,
-  v02BoidLength: 2.5,
-  v02BoidLineLength: 6,
-  themeSeedHex: "#6688cc",
-  v02LifeCycleFrames: 180,
-  v02InnerExclusionDepth: 9999,
-  v02SpawnOuterMarginPx: 8,
-  v02BlastRadius: 130,
-  v02CenterSpeed: 0.55,
-  v02EdgeVelocityMultiplier: 1.0,
-  invertSpeedProfile: false,
-  v02ConstantSpeedAtCenter: true,
-  v02SepRadius: 24,
-  v02AlignRadius: 36,
-  v02CohesionRadius: 42,
-  v02SepWeight: 1.2,
-  v02AlignWeight: 1.0,
-  v02CohesionWeight: 0.8,
-  mouseAlignRadius: 80,
-  mouseAttractRadius: 80,
-  mouseAlignWeight: 0.6,
-  mouseAttractWeight: 0.8,
-  mouseAccelSensitivity: 1.0,
-  mouseMinSpeed: 0.5,
-  mouseDecayRate: 1.5,
-  mouseProximityLerpDown: 0.04,
-  lastDirection: { x: 0, y: 1 },
-};
+const LAST_DIRECTION = { x: 0, y: 1 };
 
 const VEL_LERP = 0.38;
 const BLAST_SPEED = 22;
@@ -55,7 +24,8 @@ export type BoidLayerHandle = {
     lightPos: { x: number; y: number },
     isDown: boolean,
     mouseVelX: number,
-    mouseVelY: number
+    mouseVelY: number,
+    params: BoidParams
   ): void;
   resize(): void;
 };
@@ -70,7 +40,7 @@ export function createBoidLayer(): BoidLayerHandle {
   let lastPillH = 0;
 
   return {
-    draw(target, pillRect, lightPos, isDown, mouseVelX, mouseVelY) {
+    draw(target, pillRect, lightPos, isDown, mouseVelX, mouseVelY, params) {
       const { x: cx, y: cy, w: cw, h: ch } = pillRect;
       if (cw <= 0 || ch <= 0) return;
 
@@ -101,7 +71,7 @@ export function createBoidLayer(): BoidLayerHandle {
       const justClicked = isDown && !wasDown;
 
       if (justClicked && pointerInsidePill) {
-        const blastRadius = Math.max(1, PARAMS.v02BlastRadius);
+        const blastRadius = Math.max(1, params.v02BlastRadius);
         for (const b of boids) {
           const dx = b.x - effectLx;
           const dy = b.y - effectLy;
@@ -127,12 +97,10 @@ export function createBoidLayer(): BoidLayerHandle {
         v02LifeCycleFrames,
         v02InnerExclusionDepth,
         v02SpawnOuterMarginPx,
-        lastDirection,
         minLiveBoids,
         deathDistancePx,
         v02CenterSpeed,
         v02EdgeVelocityMultiplier,
-        invertSpeedProfile,
         v02ConstantSpeedAtCenter,
         v02SepRadius,
         v02AlignRadius,
@@ -151,7 +119,7 @@ export function createBoidLayer(): BoidLayerHandle {
         v02BoidLength,
         v02BoidLineLength,
         themeSeedHex,
-      } = PARAMS;
+      } = params;
 
       const innerExclusionDepth = Math.max(1, v02InnerExclusionDepth);
       const spawnOuterMarginPx = Math.max(1, v02SpawnOuterMarginPx);
@@ -163,8 +131,8 @@ export function createBoidLayer(): BoidLayerHandle {
           movementMode,
           innerExclusionDepth,
           spawnOuterMarginPx,
-          lastDirection.x,
-          lastDirection.y,
+          LAST_DIRECTION.x,
+          LAST_DIRECTION.y,
         );
         initialized = true;
         lastPillW = cw;
@@ -174,7 +142,7 @@ export function createBoidLayer(): BoidLayerHandle {
       const speedScale = v02PointerSpeedScale(
         lx, ly,
         cx, cy, cw, ch,
-        invertSpeedProfile,
+        false,
         v02EdgeVelocityMultiplier,
         v02CenterSpeed,
         v02ConstantSpeedAtCenter,
@@ -188,15 +156,15 @@ export function createBoidLayer(): BoidLayerHandle {
         movementMode,
         innerExclusionDepth,
         spawnOuterMarginPx,
-        lastDirection.x,
-        lastDirection.y,
+        LAST_DIRECTION.x,
+        LAST_DIRECTION.y,
       );
 
       boids = v02FlockAndFilter(
         boids,
         cx, cy, cw, ch,
         movementMode,
-        lastDirection.x, lastDirection.y,
+        LAST_DIRECTION.x, LAST_DIRECTION.y,
         innerExclusionDepth,
         speedScale,
         effectLx, effectLy,

@@ -93,6 +93,38 @@ export type SpecularModulationState = {
   peakSpecDispersionAmountMul: number;
 };
 
+export type BoidMovementMode = "isocontour" | "flow";
+
+export type BoidParams = {
+  minLiveBoids: number;
+  deathDistancePx: number;
+  v02BoidLength: number;
+  v02BoidLineLength: number;
+  themeSeedHex: string;
+  v02LifeCycleFrames: number;
+  movementMode: BoidMovementMode;
+  v02ConstantSpeedAtCenter: boolean;
+  v02CenterSpeed: number;
+  v02EdgeVelocityMultiplier: number;
+  v02InnerExclusionDepth: number;
+  v02SpawnOuterMarginPx: number;
+  v02BlastRadius: number;
+  v02SepRadius: number;
+  v02SepWeight: number;
+  v02AlignRadius: number;
+  v02AlignWeight: number;
+  v02CohesionRadius: number;
+  v02CohesionWeight: number;
+  mouseAlignRadius: number;
+  mouseAlignWeight: number;
+  mouseAttractRadius: number;
+  mouseAttractWeight: number;
+  mouseAccelSensitivity: number;
+  mouseMinSpeed: number;
+  mouseDecayRate: number;
+  mouseProximityLerpDown: number;
+};
+
 export type SceneData = {
   /** Screen space, origin top-left of the scene (canvas) */
   lightPos: { x: number; y: number };
@@ -127,5 +159,6 @@ export type SceneData = {
   specDirByCellId: Record<string, [number, number]>;
   /** When true, boid simulation renders into bgLayer each frame. */
   boidEnabled: boolean;
+  boidParams: BoidParams;
 };
 

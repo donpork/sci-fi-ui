@@ -256,7 +256,7 @@ export function createGridShaderSketch(
           const velY = d.lightPos.y - prevLightY;
           const ctx = (bgLayer as unknown as { drawingContext: CanvasRenderingContext2D }).drawingContext;
           ctx.globalCompositeOperation = "lighter";
-          boidLayer?.draw(bgLayer, cell, d.lightPos, d.rimHoldPointerDown, velX, velY);
+          boidLayer?.draw(bgLayer, cell, d.lightPos, d.rimHoldPointerDown, velX, velY, d.boidParams);
           ctx.globalCompositeOperation = "source-over";
         }
       }
