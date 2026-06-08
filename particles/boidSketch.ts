@@ -18,11 +18,11 @@ const ORBIT_CLOCKWISE = true
 const ORBIT_WEIGHT = 0.65
 const FLOW_WEIGHT = 0.4
 const INNER_REPEL_FORCE = 1.25
-const WALL_REPEL_RANGE = 10
-const WALL_REPEL_FORCE = 3.4
-const WALL_REPEL_EXPONENT = 5
-const BLAST_SPEED = 22
-const BLAST_FRAMES = 10
+const WALL_REPEL_RANGE = 2
+const WALL_REPEL_FORCE = 2
+const WALL_REPEL_EXPONENT = 10
+const BLAST_SPEED = 20
+const BLAST_FRAMES = 30
 const BLAST_TWIST = 0.3
 const MOUSE_REPEL_RADIUS = 88
 const MOUSE_REPEL_FORCE = 3.4
@@ -247,13 +247,21 @@ export function v02RandomPointInAnnulus(
   innerDepth: number,
   outerMargin: number,
 ): { x: number; y: number } {
-  const safeInnerDepth = Math.max(outerMargin + 1, innerDepth)
   for (let i = 0; i < 48; i++) {
     const x = cx + Math.random() * cw
     const y = cy + Math.random() * ch
     const sdf = v02PillSDF(x, y, cx, cy, cw, ch)
-    if (sdf < -outerMargin && sdf > -safeInnerDepth) return { x, y }
+    if (innerDepth <= 0) {
+      if (sdf < -outerMargin) return { x, y }
+    } else {
+      const safeInnerDepth = Math.max(outerMargin + 1, innerDepth)
+      if (sdf < -outerMargin && sdf > -safeInnerDepth) return { x, y }
+    }
   }
+  if (innerDepth <= 0) {
+    return { x: cx + cw * 0.5, y: cy + ch * 0.5 }
+  }
+  const safeInnerDepth = Math.max(outerMargin + 1, innerDepth)
   const bandMid = (safeInnerDepth + outerMargin) * 0.5
   return { x: cx + cw * 0.5, y: cy + bandMid }
 }
@@ -493,7 +501,7 @@ export function v02FlockAndFilter(
         b.ax += fx * ORBIT_WEIGHT
         b.ay += fy * ORBIT_WEIGHT
       }
-      {
+      if (innerExclusionDepth > 0) {
         const innerThreshold = -innerExclusionDepth
         if (sdf < innerThreshold) {
           const excess = (innerThreshold - sdf) / Math.max(Math.abs(innerThreshold), 1)
@@ -807,7 +815,7 @@ export function createBoidSketch(
       const effectLy = pointerInsidePill ? lightPos.y : -1
       const ACTIVITY_SPEED_SCALE = 5
       const mouseActivityIntensity = pointerInsidePill ? v02Clamp01(mouseSpeed / ACTIVITY_SPEED_SCALE) : 0
-      const innerExclusionDepth = Math.max(1, v02InnerExclusionDepth)
+      const innerExclusionDepth = Math.max(0, v02InnerExclusionDepth)
       const spawnOuterMarginPx = Math.max(1, v02SpawnOuterMarginPx)
       const blastRadius = Math.max(1, v02BlastRadius ?? 130)
       ensureBoidBuffer(p.width, p.height)

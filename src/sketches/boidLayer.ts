@@ -121,7 +121,7 @@ export function createBoidLayer(): BoidLayerHandle {
         themeSeedHex,
       } = params;
 
-      const innerExclusionDepth = Math.max(1, v02InnerExclusionDepth);
+      const innerExclusionDepth = Math.max(0, v02InnerExclusionDepth);
       const spawnOuterMarginPx = Math.max(1, v02SpawnOuterMarginPx);
 
       if (!initialized || Math.abs(cw - lastPillW) > 10 || Math.abs(ch - lastPillH) > 10) {

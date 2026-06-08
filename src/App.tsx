@@ -8,7 +8,7 @@ import "./App.css";
 const CELL_LABELS = makeLabelsFromPreset(PRESET_SINGLE);
 
 const BOID_PARAMS_DEFAULTS: BoidParams = {
-  minLiveBoids: 1000,
+  minLiveBoids: 2000,
   deathDistancePx: 12,
   v02BoidLength: 2,
   v02BoidLineLength: 4,
@@ -18,9 +18,9 @@ const BOID_PARAMS_DEFAULTS: BoidParams = {
   v02ConstantSpeedAtCenter: true,
   v02CenterSpeed: 0.3,
   v02EdgeVelocityMultiplier: 1.0,
-  v02InnerExclusionDepth: 9999,
+  v02InnerExclusionDepth: 0,
   v02SpawnOuterMarginPx: 8,
-  v02BlastRadius: 400,
+  v02BlastRadius: 800,
   v02SepRadius: 24,
   v02SepWeight: 1.3,
   v02AlignRadius: 36,
@@ -28,11 +28,11 @@ const BOID_PARAMS_DEFAULTS: BoidParams = {
   v02CohesionRadius: 42,
   v02CohesionWeight: 1.0,
   mouseAlignRadius: 200,
-  mouseAlignWeight: 1.0,
-  mouseAttractRadius: 120,
-  mouseAttractWeight: 2.0,
-  mouseAccelSensitivity: 1.0,
-  mouseMinSpeed: 0.03,
+  mouseAlignWeight: 2.0,
+  mouseAttractRadius: 180,
+  mouseAttractWeight: 4.0,
+  mouseAccelSensitivity: 2.0,
+  mouseMinSpeed: 0.3,
   mouseDecayRate: 1.5,
   mouseProximityLerpDown: 1.0,
 };
@@ -268,7 +268,7 @@ function App() {
         if (key === "v02LifeCycleFrames") return { ...prev, v02LifeCycleFrames: Math.max(10, Math.round(n)) };
         if (key === "v02CenterSpeed") return { ...prev, v02CenterSpeed: clamp(n, 0, 2) };
         if (key === "v02EdgeVelocityMultiplier") return { ...prev, v02EdgeVelocityMultiplier: clamp(n, 0, 4) };
-        if (key === "v02InnerExclusionDepth") return { ...prev, v02InnerExclusionDepth: Math.max(1, n) };
+        if (key === "v02InnerExclusionDepth") return { ...prev, v02InnerExclusionDepth: clamp(n, 0, 800) };
         if (key === "v02SpawnOuterMarginPx") return { ...prev, v02SpawnOuterMarginPx: Math.max(1, n) };
         if (key === "v02BlastRadius") return { ...prev, v02BlastRadius: Math.max(1, n) };
         if (key === "v02SepRadius") return { ...prev, v02SepRadius: Math.max(1, n) };
@@ -913,12 +913,13 @@ function App() {
               />
             </label>
             <label className="app__label">
-              Inner exclusion
+              Inner exclusion (px)
               <input
                 type="number"
-                step="10"
-                min="1"
-                max="9999"
+                step="1"
+                min="0"
+                max="200"
+                title="0 = off. Distance from the pill wall inward where boids are repelled and won't spawn."
                 value={boidParams.v02InnerExclusionDepth}
                 onChange={onBoidParam("v02InnerExclusionDepth")}
               />
