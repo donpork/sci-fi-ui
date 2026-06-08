@@ -64,13 +64,6 @@ export function ResizableGridOverlay({
   const moveListener = useRef<((e: PointerEvent) => void) | null>(null);
   const endPointerListener = useRef<((e: PointerEvent) => void) | null>(null);
   const glowRefsRef = useRef<Map<string, HTMLDivElement>>(new Map());
-  const pendingOrbit = useRef<{
-    cellId: string;
-    nx: number;
-    ny: number;
-    orbitMs: number;
-    decayMs: number;
-  } | null>(null);
 
   useLayoutEffect(() => {
     const parent = rootRef.current?.parentElement;
@@ -337,38 +330,27 @@ export function ResizableGridOverlay({
         rimReleaseFromMul: null,
         rimReleaseMode: null,
         rimShortPulseRampMs: null,
+        specularSpin: {
+          cellId: cr.id,
+          startTimeMs: nowMs,
+          durationMs: orbitMs,
+          startSpecDirX: nx,
+          startSpecDirY: ny,
+        },
+        specularModulation: {
+          cellId: cr.id,
+          startTimeMs: nowMs,
+          durationMs: orbitMs,
+          peakPhase: 0.5,
+          decayMs,
+          peakSpecularIntensityMul: 3.0,
+          peakSpecularPowerMul: 0.5,
+          peakDispersionHueShiftMul: 3.5,
+          peakDispersionSpreadMul: 4.0,
+          peakSpecDispersionAmountMul: 5.0,
+        },
       };
-      pendingOrbit.current = { cellId: cr.id, nx, ny, orbitMs, decayMs };
     };
-
-  const onCellPointerUp = (_e: React.PointerEvent<HTMLDivElement>) => {
-    const p = pendingOrbit.current;
-    if (!p) return;
-    pendingOrbit.current = null;
-    const nowMs = performance.now();
-    dataRef.current = {
-      ...dataRef.current,
-      specularSpin: {
-        cellId: p.cellId,
-        startTimeMs: nowMs,
-        durationMs: p.orbitMs,
-        startSpecDirX: p.nx,
-        startSpecDirY: p.ny,
-      },
-      specularModulation: {
-        cellId: p.cellId,
-        startTimeMs: nowMs,
-        durationMs: p.orbitMs,
-        peakPhase: 0.5,
-        decayMs: p.decayMs,
-        peakSpecularIntensityMul: 3.0,
-        peakSpecularPowerMul: 0.5,
-        peakDispersionHueShiftMul: 3.5,
-        peakDispersionSpreadMul: 4.0,
-        peakSpecDispersionAmountMul: 5.0,
-      },
-    };
-  };
 
   const onCellGlowMove =
     (cellId: string) => (_e: React.PointerEvent<HTMLDivElement>) => {
@@ -458,7 +440,6 @@ export function ResizableGridOverlay({
             gridRow: `${cell.row + 1} / span ${cell.rowSpan}`,
           }}
           onPointerDown={onCellPointerDown(cell.id)}
-          onPointerUp={onCellPointerUp}
           onPointerMove={onCellGlowMove(cell.id)}
           onPointerLeave={onCellGlowLeave(cell.id)}
         >
