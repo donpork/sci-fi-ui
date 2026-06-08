@@ -8,6 +8,7 @@ import {
   v02FlockAndFilter,
   v02DrawAllBoids,
   v02PointerSpeedScale,
+  v02InnerExclusionDepthPx,
 } from "../../particles/boidSketch";
 
 const LAST_DIRECTION = { x: 0, y: 1 };
@@ -95,7 +96,7 @@ export function createBoidLayer(): BoidLayerHandle {
       const {
         movementMode,
         v02LifeCycleFrames,
-        v02InnerExclusionDepth,
+        v02InnerExclusionPct,
         v02SpawnOuterMarginPx,
         minLiveBoids,
         deathDistancePx,
@@ -121,7 +122,10 @@ export function createBoidLayer(): BoidLayerHandle {
         themeSeedHex,
       } = params;
 
-      const innerExclusionDepth = Math.max(0, v02InnerExclusionDepth);
+      const innerExclusionDepth = v02InnerExclusionDepthPx(
+        v02InnerExclusionPct,
+        cx, cy, cw, ch,
+      );
       const spawnOuterMarginPx = Math.max(1, v02SpawnOuterMarginPx);
 
       if (!initialized || Math.abs(cw - lastPillW) > 10 || Math.abs(ch - lastPillH) > 10) {

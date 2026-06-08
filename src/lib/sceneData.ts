@@ -106,7 +106,8 @@ export type BoidParams = {
   v02ConstantSpeedAtCenter: boolean;
   v02CenterSpeed: number;
   v02EdgeVelocityMultiplier: number;
-  v02InnerExclusionDepth: number;
+  /** 0–100% of pill interior depth (center to wall). 0 = off. */
+  v02InnerExclusionPct: number;
   v02SpawnOuterMarginPx: number;
   v02BlastRadius: number;
   v02SepRadius: number;

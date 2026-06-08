@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState, type ChangeEvent } from "react";
+import { ParamNumberInput } from "./components/ParamNumberInput";
 import { ResizableGridOverlay } from "./components/ResizableGridOverlay";
 import { makeLabelsFromPreset } from "./lib/cellLabelGrid";
 import { PRESET_SINGLE } from "./lib/layoutPreset";
@@ -18,7 +19,7 @@ const BOID_PARAMS_DEFAULTS: BoidParams = {
   v02ConstantSpeedAtCenter: true,
   v02CenterSpeed: 0.3,
   v02EdgeVelocityMultiplier: 1.0,
-  v02InnerExclusionDepth: 0,
+  v02InnerExclusionPct: 0,
   v02SpawnOuterMarginPx: 8,
   v02BlastRadius: 800,
   v02SepRadius: 24,
@@ -103,6 +104,7 @@ function App() {
   const [panelParticles, setPanelParticles] = useState(false);
   const [panelDebug, setPanelDebug] = useState(false);
   const [boidParams, setBoidParams] = useState<BoidParams>(BOID_PARAMS_DEFAULTS);
+  const [boidEnabled, setBoidEnabled] = useState(true);
 
   useLayoutEffect(() => {
     dataRef.current = { ...dataRef.current, glassParams };
@@ -112,9 +114,12 @@ function App() {
     dataRef.current = { ...dataRef.current, boidParams };
   }, [boidParams]);
 
+  useLayoutEffect(() => {
+    dataRef.current = { ...dataRef.current, boidEnabled };
+  }, [boidEnabled]);
+
   const onGlassParam =
-    (key: keyof GlassParams) => (e: ChangeEvent<HTMLInputElement>) => {
-      const n = Number(e.target.value);
+    (key: keyof GlassParams) => (n: number) => {
       if (!Number.isFinite(n)) return;
       setGlassParams((prev) => {
         if (
@@ -197,8 +202,7 @@ function App() {
       });
     };
 
-  const onLightDir = (axis: 0 | 1) => (e: ChangeEvent<HTMLInputElement>) => {
-      const n = Number(e.target.value);
+  const onLightDir = (axis: 0 | 1) => (n: number) => {
       if (!Number.isFinite(n)) return;
       setGlassParams((prev) => {
         const lightDirXY: [number, number] = [...prev.lightDirXY];
@@ -208,8 +212,7 @@ function App() {
     };
 
   const onSpecularLight =
-    (axis: 0 | 1) => (e: ChangeEvent<HTMLInputElement>) => {
-      const n = Number(e.target.value);
+    (axis: 0 | 1) => (n: number) => {
       if (!Number.isFinite(n)) return;
       setGlassParams((prev) => {
         const specularLightXY: [number, number] = [...prev.specularLightXY];
@@ -236,8 +239,7 @@ function App() {
     setGlassParams((prev) => ({ ...prev, bevelEnabled: e.target.checked }));
   };
 
-  const onBoxLightSize = (axis: 0 | 1) => (e: ChangeEvent<HTMLInputElement>) => {
-    const n = Number(e.target.value);
+  const onBoxLightSize = (axis: 0 | 1) => (n: number) => {
     if (!Number.isFinite(n)) return;
     setGlassParams((prev) => {
       const boxLightSize: [number, number] = [...prev.boxLightSize];
@@ -246,8 +248,7 @@ function App() {
     });
   };
 
-  const onBoxLightPos = (axis: 0 | 1) => (e: ChangeEvent<HTMLInputElement>) => {
-    const n = Number(e.target.value);
+  const onBoxLightPos = (axis: 0 | 1) => (n: number) => {
     if (!Number.isFinite(n)) return;
     setGlassParams((prev) => {
       const boxLightPosXY: [number, number] = [...prev.boxLightPosXY];
@@ -257,8 +258,7 @@ function App() {
   };
 
   const onBoidParam =
-    (key: keyof BoidParams) => (e: ChangeEvent<HTMLInputElement>) => {
-      const n = Number(e.target.value);
+    (key: keyof BoidParams) => (n: number) => {
       if (!Number.isFinite(n)) return;
       setBoidParams((prev) => {
         if (key === "minLiveBoids") return { ...prev, minLiveBoids: Math.max(0, Math.min(10000, Math.round(n))) };
@@ -268,7 +268,7 @@ function App() {
         if (key === "v02LifeCycleFrames") return { ...prev, v02LifeCycleFrames: Math.max(10, Math.round(n)) };
         if (key === "v02CenterSpeed") return { ...prev, v02CenterSpeed: clamp(n, 0, 2) };
         if (key === "v02EdgeVelocityMultiplier") return { ...prev, v02EdgeVelocityMultiplier: clamp(n, 0, 4) };
-        if (key === "v02InnerExclusionDepth") return { ...prev, v02InnerExclusionDepth: clamp(n, 0, 800) };
+        if (key === "v02InnerExclusionPct") return { ...prev, v02InnerExclusionPct: clamp(n, 0, 100) };
         if (key === "v02SpawnOuterMarginPx") return { ...prev, v02SpawnOuterMarginPx: Math.max(1, n) };
         if (key === "v02BlastRadius") return { ...prev, v02BlastRadius: Math.max(1, n) };
         if (key === "v02SepRadius") return { ...prev, v02SepRadius: Math.max(1, n) };
@@ -305,7 +305,7 @@ function App() {
   };
 
   const onBoidEnabled = (e: ChangeEvent<HTMLInputElement>) => {
-    dataRef.current = { ...dataRef.current, boidEnabled: e.target.checked };
+    setBoidEnabled(e.target.checked);
   };
 
   const onDebugShader = (e: ChangeEvent<HTMLInputElement>) => {
@@ -376,44 +376,40 @@ function App() {
             <div className="app__param-group__body">
             <label className="app__label">
               Light X
-              <input
-                type="number"
-                step="0.01"
-                min="-1"
-                max="1"
+              <ParamNumberInput
+                step={0.01}
+                min={-1}
+                max={1}
                 value={glassParams.lightDirXY[0]}
                 onChange={onLightDir(0)}
               />
             </label>
             <label className="app__label">
               Light Y
-              <input
-                type="number"
-                step="0.01"
-                min="-1"
-                max="1"
+              <ParamNumberInput
+                step={0.01}
+                min={-1}
+                max={1}
                 value={glassParams.lightDirXY[1]}
                 onChange={onLightDir(1)}
               />
             </label>
             <label className="app__label">
               Intensity
-              <input
-                type="number"
-                step="0.05"
-                min="0"
-                max="2"
+              <ParamNumberInput
+                step={0.05}
+                min={0}
+                max={2}
                 value={glassParams.keyLightIntensity}
                 onChange={onGlassParam("keyLightIntensity")}
               />
             </label>
             <label className="app__label">
               Z (depth)
-              <input
-                type="number"
-                step="0.05"
-                min="0.05"
-                max="2"
+              <ParamNumberInput
+                step={0.05}
+                min={0.05}
+                max={2}
                 value={glassParams.keyLightZ}
                 onChange={onGlassParam("keyLightZ")}
               />
@@ -425,44 +421,40 @@ function App() {
             <div className="app__param-group__body">
             <label className="app__label">
               Spec X
-              <input
-                type="number"
-                step="0.01"
-                min="-1"
-                max="1"
+              <ParamNumberInput
+                step={0.01}
+                min={-1}
+                max={1}
                 value={glassParams.specularLightXY[0]}
                 onChange={onSpecularLight(0)}
               />
             </label>
             <label className="app__label">
               Spec Y
-              <input
-                type="number"
-                step="0.01"
-                min="-1"
-                max="1"
+              <ParamNumberInput
+                step={0.01}
+                min={-1}
+                max={1}
                 value={glassParams.specularLightXY[1]}
                 onChange={onSpecularLight(1)}
               />
             </label>
             <label className="app__label">
               Spec pow
-              <input
-                type="number"
-                step="1"
-                min="1"
-                max="256"
+              <ParamNumberInput
+                step={1}
+                min={1}
+                max={256}
                 value={glassParams.specularPower}
                 onChange={onGlassParam("specularPower")}
               />
             </label>
             <label className="app__label">
               Spec intensity
-              <input
-                type="number"
-                step="0.1"
-                min="0"
-                max="3"
+              <ParamNumberInput
+                step={0.1}
+                min={0}
+                max={3}
                 value={glassParams.specularIntensity}
                 onChange={onGlassParam("specularIntensity")}
               />
@@ -498,66 +490,60 @@ function App() {
             </label>
             <label className="app__label">
               Box intensity
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                max="2"
+              <ParamNumberInput
+                step={0.01}
+                min={0}
+                max={2}
                 value={glassParams.boxLightIntensity}
                 onChange={onGlassParam("boxLightIntensity")}
               />
             </label>
             <label className="app__label">
               Box softness
-              <input
-                type="number"
-                step="0.01"
-                min="0.01"
-                max="0.8"
+              <ParamNumberInput
+                step={0.01}
+                min={0.01}
+                max={0.8}
                 value={glassParams.boxLightSoftness}
                 onChange={onGlassParam("boxLightSoftness")}
               />
             </label>
             <label className="app__label">
               Box width
-              <input
-                type="number"
-                step="0.01"
-                min="0.05"
-                max="0.8"
+              <ParamNumberInput
+                step={0.01}
+                min={0.05}
+                max={0.8}
                 value={glassParams.boxLightSize[0]}
                 onChange={onBoxLightSize(0)}
               />
             </label>
             <label className="app__label">
               Box height
-              <input
-                type="number"
-                step="0.01"
-                min="0.05"
-                max="0.8"
+              <ParamNumberInput
+                step={0.01}
+                min={0.05}
+                max={0.8}
                 value={glassParams.boxLightSize[1]}
                 onChange={onBoxLightSize(1)}
               />
             </label>
             <label className="app__label">
               Box X
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                max="1"
+              <ParamNumberInput
+                step={0.01}
+                min={0}
+                max={1}
                 value={glassParams.boxLightPosXY[0]}
                 onChange={onBoxLightPos(0)}
               />
             </label>
             <label className="app__label">
               Box Y
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                max="1"
+              <ParamNumberInput
+                step={0.01}
+                min={0}
+                max={1}
                 value={glassParams.boxLightPosXY[1]}
                 onChange={onBoxLightPos(1)}
               />
@@ -576,11 +562,10 @@ function App() {
               title="Fresnel curve exponent: higher = brighter only at grazing edges."
             >
               Rim power
-              <input
-                type="number"
-                step="0.1"
-                min="0.1"
-                max="8"
+              <ParamNumberInput
+                step={0.1}
+                min={0.1}
+                max={8}
                 value={glassParams.rimPower}
                 onChange={onGlassParam("rimPower")}
               />
@@ -590,55 +575,50 @@ function App() {
               title="White edge glow where Fresnel is high (silhouette)."
             >
               Rim intensity
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                max="2"
+              <ParamNumberInput
+                step={0.01}
+                min={0}
+                max={2}
                 value={glassParams.rimIntensity}
                 onChange={onGlassParam("rimIntensity")}
               />
             </label>
             <label className="app__label">
               Flat pow
-              <input
-                type="number"
-                step="0.1"
-                min="1"
-                max="8"
+              <ParamNumberInput
+                step={0.1}
+                min={1}
+                max={8}
                 value={glassParams.flatPow}
                 onChange={onGlassParam("flatPow")}
               />
             </label>
             <label className="app__label">
               Plateau
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                max="0.8"
+              <ParamNumberInput
+                step={0.01}
+                min={0}
+                max={0.8}
                 value={glassParams.plateau}
                 onChange={onGlassParam("plateau")}
               />
             </label>
             <label className="app__label">
               Refraction
-              <input
-                type="number"
-                step="0.1"
-                min="0"
-                max="32"
+              <ParamNumberInput
+                step={0.1}
+                min={0}
+                max={32}
                 value={glassParams.refractionStrength}
                 onChange={onGlassParam("refractionStrength")}
               />
             </label>
             <label className="app__label">
               Edge soft
-              <input
-                type="number"
-                step="0.1"
-                min="0.2"
-                max="4"
+              <ParamNumberInput
+                step={0.1}
+                min={0.2}
+                max={4}
                 value={glassParams.edgeSoftness}
                 onChange={onGlassParam("edgeSoftness")}
               />
@@ -648,11 +628,10 @@ function App() {
               title="Rotates rainbow fringe hues around gray (radians)."
             >
               Fringe hue
-              <input
-                type="number"
-                step="0.05"
-                min="-3.15"
-                max="3.15"
+              <ParamNumberInput
+                step={0.05}
+                min={-3.15}
+                max={3.15}
                 value={glassParams.dispersionHueShift}
                 onChange={onGlassParam("dispersionHueShift")}
               />
@@ -662,11 +641,10 @@ function App() {
               title="0 = faint gray fringes, 1 = full saturated rainbow."
             >
               Fringe vivid
-              <input
-                type="number"
-                step="0.02"
-                min="0"
-                max="1"
+              <ParamNumberInput
+                step={0.02}
+                min={0}
+                max={1}
                 value={glassParams.dispersionSaturation}
                 onChange={onGlassParam("dispersionSaturation")}
               />
@@ -676,11 +654,10 @@ function App() {
               title="How far apart the RGB background samples are spread (wider chromatic blur)."
             >
               Split width
-              <input
-                type="number"
-                step="0.05"
-                min="0.25"
-                max="3"
+              <ParamNumberInput
+                step={0.05}
+                min={0.25}
+                max={3}
                 value={glassParams.dispersionSpread}
                 onChange={onGlassParam("dispersionSpread")}
               />
@@ -690,11 +667,10 @@ function App() {
               title="Higher = punchier spectral bands; lower = softer, more blended fringes."
             >
               Band purity
-              <input
-                type="number"
-                step="0.05"
-                min="0"
-                max="3"
+              <ParamNumberInput
+                step={0.05}
+                min={0}
+                max={3}
                 value={glassParams.dispersionSharpness}
                 onChange={onGlassParam("dispersionSharpness")}
               />
@@ -704,11 +680,10 @@ function App() {
               title="Low = chroma visible toward face center. High = chroma mostly at glancing silhouette."
             >
               Edge chroma
-              <input
-                type="number"
-                step="0.05"
-                min="0"
-                max="1"
+              <ParamNumberInput
+                step={0.05}
+                min={0}
+                max={1}
                 value={glassParams.dispersionFocus}
                 onChange={onGlassParam("dispersionFocus")}
               />
@@ -718,11 +693,10 @@ function App() {
               title="How much the existing fresnel dispersion color tints the specular highlight."
             >
               Spec disp amt
-              <input
-                type="number"
-                step="0.05"
-                min="0"
-                max="1"
+              <ParamNumberInput
+                step={0.05}
+                min={0}
+                max={1}
                 value={glassParams.specDispersionAmount}
                 onChange={onGlassParam("specDispersionAmount")}
               />
@@ -732,11 +706,10 @@ function App() {
               title="Cubemap reflection strength (still ramps with Fresnel)."
             >
               Env refl
-              <input
-                type="number"
-                step="0.05"
-                min="0"
-                max="3"
+              <ParamNumberInput
+                step={0.05}
+                min={0}
+                max={3}
                 value={glassParams.envReflection}
                 onChange={onGlassParam("envReflection")}
               />
@@ -756,33 +729,30 @@ function App() {
             </label>
             <label className="app__label">
               Bevel str
-              <input
-                type="number"
-                step="0.02"
-                min="0"
-                max="1"
+              <ParamNumberInput
+                step={0.02}
+                min={0}
+                max={1}
                 value={glassParams.bevelStrength}
                 onChange={onGlassParam("bevelStrength")}
               />
             </label>
             <label className="app__label">
               Bevel px
-              <input
-                type="number"
-                step="0.5"
-                min="1"
-                max="32"
+              <ParamNumberInput
+                step={0.5}
+                min={1}
+                max={32}
                 value={glassParams.bevelWidthPx}
                 onChange={onGlassParam("bevelWidthPx")}
               />
             </label>
             <label className="app__label">
               Bevel exp
-              <input
-                type="number"
-                step="0.5"
-                min="1"
-                max="16"
+              <ParamNumberInput
+                step={0.5}
+                min={1}
+                max={16}
                 value={glassParams.bevelExponent}
                 onChange={onGlassParam("bevelExponent")}
               />
@@ -806,33 +776,30 @@ function App() {
             </label>
             <label className="app__label">
               Min live
-              <input
-                type="number"
-                step="10"
-                min="0"
-                max="10000"
+              <ParamNumberInput
+                step={10}
+                min={0}
+                max={10000}
                 value={boidParams.minLiveBoids}
                 onChange={onBoidParam("minLiveBoids")}
               />
             </label>
             <label className="app__label">
               Stroke width
-              <input
-                type="number"
-                step="0.1"
-                min="0.5"
-                max="10"
+              <ParamNumberInput
+                step={0.1}
+                min={0.5}
+                max={10}
                 value={boidParams.v02BoidLength}
                 onChange={onBoidParam("v02BoidLength")}
               />
             </label>
             <label className="app__label">
               Boid length
-              <input
-                type="number"
-                step="0.5"
-                min="1"
-                max="40"
+              <ParamNumberInput
+                step={0.5}
+                min={1}
+                max={40}
                 value={boidParams.v02BoidLineLength}
                 onChange={onBoidParam("v02BoidLineLength")}
               />
@@ -847,22 +814,20 @@ function App() {
             </label>
             <label className="app__label">
               Life frames
-              <input
-                type="number"
-                step="10"
-                min="10"
-                max="2000"
+              <ParamNumberInput
+                step={10}
+                min={10}
+                max={2000}
                 value={boidParams.v02LifeCycleFrames}
                 onChange={onBoidParam("v02LifeCycleFrames")}
               />
             </label>
             <label className="app__label">
               Edge buffer
-              <input
-                type="number"
-                step="1"
-                min="0"
-                max="100"
+              <ParamNumberInput
+                step={1}
+                min={0}
+                max={100}
                 value={boidParams.deathDistancePx}
                 onChange={onBoidParam("deathDistancePx")}
               />
@@ -892,56 +857,51 @@ function App() {
             </label>
             <label className="app__label">
               Center speed
-              <input
-                type="number"
-                step="0.05"
-                min="0"
-                max="2"
+              <ParamNumberInput
+                step={0.05}
+                min={0}
+                max={2}
                 value={boidParams.v02CenterSpeed}
                 onChange={onBoidParam("v02CenterSpeed")}
               />
             </label>
             <label className="app__label">
               Edge speed x
-              <input
-                type="number"
-                step="0.1"
-                min="0"
-                max="4"
+              <ParamNumberInput
+                step={0.1}
+                min={0}
+                max={4}
                 value={boidParams.v02EdgeVelocityMultiplier}
                 onChange={onBoidParam("v02EdgeVelocityMultiplier")}
               />
             </label>
             <label className="app__label">
-              Inner exclusion (px)
-              <input
-                type="number"
-                step="1"
-                min="0"
-                max="200"
-                title="0 = off. Distance from the pill wall inward where boids are repelled and won't spawn."
-                value={boidParams.v02InnerExclusionDepth}
-                onChange={onBoidParam("v02InnerExclusionDepth")}
+              Inner exclusion (%)
+              <ParamNumberInput
+                step={1}
+                min={0}
+                max={100}
+                title="0 = off. Percent of interior depth (center to wall) kept clear of boids."
+                value={boidParams.v02InnerExclusionPct}
+                onChange={onBoidParam("v02InnerExclusionPct")}
               />
             </label>
             <label className="app__label">
               Spawn margin
-              <input
-                type="number"
-                step="1"
-                min="1"
-                max="100"
+              <ParamNumberInput
+                step={1}
+                min={1}
+                max={100}
                 value={boidParams.v02SpawnOuterMarginPx}
                 onChange={onBoidParam("v02SpawnOuterMarginPx")}
               />
             </label>
             <label className="app__label">
               Blast radius
-              <input
-                type="number"
-                step="5"
-                min="1"
-                max="500"
+              <ParamNumberInput
+                step={5}
+                min={1}
+                max={500}
                 value={boidParams.v02BlastRadius}
                 onChange={onBoidParam("v02BlastRadius")}
               />
@@ -953,66 +913,60 @@ function App() {
             <div className="app__param-group__body">
             <label className="app__label">
               Sep radius
-              <input
-                type="number"
-                step="1"
-                min="1"
-                max="400"
+              <ParamNumberInput
+                step={1}
+                min={1}
+                max={400}
                 value={boidParams.v02SepRadius}
                 onChange={onBoidParam("v02SepRadius")}
               />
             </label>
             <label className="app__label">
               Sep weight
-              <input
-                type="number"
-                step="0.1"
-                min="0"
-                max="5"
+              <ParamNumberInput
+                step={0.1}
+                min={0}
+                max={5}
                 value={boidParams.v02SepWeight}
                 onChange={onBoidParam("v02SepWeight")}
               />
             </label>
             <label className="app__label">
               Align radius
-              <input
-                type="number"
-                step="1"
-                min="1"
-                max="400"
+              <ParamNumberInput
+                step={1}
+                min={1}
+                max={400}
                 value={boidParams.v02AlignRadius}
                 onChange={onBoidParam("v02AlignRadius")}
               />
             </label>
             <label className="app__label">
               Align weight
-              <input
-                type="number"
-                step="0.1"
-                min="0"
-                max="5"
+              <ParamNumberInput
+                step={0.1}
+                min={0}
+                max={5}
                 value={boidParams.v02AlignWeight}
                 onChange={onBoidParam("v02AlignWeight")}
               />
             </label>
             <label className="app__label">
               Cohesion radius
-              <input
-                type="number"
-                step="1"
-                min="1"
-                max="400"
+              <ParamNumberInput
+                step={1}
+                min={1}
+                max={400}
                 value={boidParams.v02CohesionRadius}
                 onChange={onBoidParam("v02CohesionRadius")}
               />
             </label>
             <label className="app__label">
               Cohesion weight
-              <input
-                type="number"
-                step="0.1"
-                min="0"
-                max="5"
+              <ParamNumberInput
+                step={0.1}
+                min={0}
+                max={5}
                 value={boidParams.v02CohesionWeight}
                 onChange={onBoidParam("v02CohesionWeight")}
               />
@@ -1024,88 +978,80 @@ function App() {
             <div className="app__param-group__body">
             <label className="app__label">
               Align radius
-              <input
-                type="number"
-                step="5"
-                min="1"
-                max="600"
+              <ParamNumberInput
+                step={5}
+                min={1}
+                max={600}
                 value={boidParams.mouseAlignRadius}
                 onChange={onBoidParam("mouseAlignRadius")}
               />
             </label>
             <label className="app__label">
               Align weight
-              <input
-                type="number"
-                step="0.1"
-                min="0"
-                max="10"
+              <ParamNumberInput
+                step={0.1}
+                min={0}
+                max={10}
                 value={boidParams.mouseAlignWeight}
                 onChange={onBoidParam("mouseAlignWeight")}
               />
             </label>
             <label className="app__label">
               Attract radius
-              <input
-                type="number"
-                step="5"
-                min="1"
-                max="600"
+              <ParamNumberInput
+                step={5}
+                min={1}
+                max={600}
                 value={boidParams.mouseAttractRadius}
                 onChange={onBoidParam("mouseAttractRadius")}
               />
             </label>
             <label className="app__label">
               Attract weight
-              <input
-                type="number"
-                step="0.1"
-                min="0"
-                max="10"
+              <ParamNumberInput
+                step={0.1}
+                min={0}
+                max={10}
                 value={boidParams.mouseAttractWeight}
                 onChange={onBoidParam("mouseAttractWeight")}
               />
             </label>
             <label className="app__label">
               Accel sensitivity
-              <input
-                type="number"
-                step="0.1"
-                min="0"
-                max="10"
+              <ParamNumberInput
+                step={0.1}
+                min={0}
+                max={10}
                 value={boidParams.mouseAccelSensitivity}
                 onChange={onBoidParam("mouseAccelSensitivity")}
               />
             </label>
             <label className="app__label">
               Min speed
-              <input
-                type="number"
-                step="0.1"
-                min="0"
-                max="10"
+              <ParamNumberInput
+                step={0.1}
+                min={0}
+                max={10}
                 value={boidParams.mouseMinSpeed}
                 onChange={onBoidParam("mouseMinSpeed")}
               />
             </label>
             <label className="app__label">
               Decay time (s)
-              <input
-                type="number"
-                step="0.1"
-                min="0.001"
-                max="10"
+              <ParamNumberInput
+                step={0.1}
+                min={0.001}
+                max={10}
                 value={boidParams.mouseDecayRate}
                 onChange={onBoidParam("mouseDecayRate")}
               />
             </label>
             <label className="app__label">
               Proximity lerp
-              <input
-                type="number"
-                step="0.005"
-                min="0.001"
-                max="1"
+              <ParamNumberInput
+                step={0.005}
+                min={0.001}
+                max={1}
                 value={boidParams.mouseProximityLerpDown}
                 onChange={onBoidParam("mouseProximityLerpDown")}
               />

@@ -206,6 +206,18 @@ export function v02PillSDF(
   return Math.hypot(Math.max(dx, 0), Math.max(dy, 0)) + Math.min(Math.max(dx, dy), 0) - radius
 }
 
+/** 0–100% of center-to-wall interior depth. 0 = off. */
+export function v02InnerExclusionDepthPx(
+  exclusionPct: number,
+  cx: number, cy: number, cw: number, ch: number,
+): number {
+  if (exclusionPct <= 0) return 0
+  const centerX = cx + cw * 0.5
+  const centerY = cy + ch * 0.5
+  const maxInwardDepth = Math.max(-v02PillSDF(centerX, centerY, cx, cy, cw, ch), 1)
+  return (Math.min(100, exclusionPct) / 100) * maxInwardDepth
+}
+
 export function v02PillGradient(
   x: number, y: number,
   cx: number, cy: number, cw: number, ch: number,
@@ -766,7 +778,7 @@ export function createBoidSketch(
         v02BoidLineLength,
         v02MovementMode,
         v02EdgeVelocityMultiplier,
-        v02InnerExclusionDepth,
+        v02InnerExclusionPct,
         v02SpawnOuterMarginPx,
         v02BlastRadius,
         v02CenterSpeed,
@@ -815,7 +827,10 @@ export function createBoidSketch(
       const effectLy = pointerInsidePill ? lightPos.y : -1
       const ACTIVITY_SPEED_SCALE = 5
       const mouseActivityIntensity = pointerInsidePill ? v02Clamp01(mouseSpeed / ACTIVITY_SPEED_SCALE) : 0
-      const innerExclusionDepth = Math.max(0, v02InnerExclusionDepth)
+      const innerExclusionDepth = v02InnerExclusionDepthPx(
+        v02InnerExclusionPct,
+        cell11.x, cell11.y, cell11.w, cell11.h,
+      )
       const spawnOuterMarginPx = Math.max(1, v02SpawnOuterMarginPx)
       const blastRadius = Math.max(1, v02BlastRadius ?? 130)
       ensureBoidBuffer(p.width, p.height)

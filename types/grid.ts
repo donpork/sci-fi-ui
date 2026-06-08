@@ -10,7 +10,7 @@ export type V02SceneData = {
   v02BoidLineLength: number
   v02MovementMode: V02MovementMode
   v02EdgeVelocityMultiplier: number
-  v02InnerExclusionDepth: number
+  v02InnerExclusionPct: number
   v02SpawnOuterMarginPx: number
   v02BlastRadius: number
   v02CenterSpeed: number
